@@ -6,14 +6,24 @@ import (
 )
 
 func main() {
-	w := weather{
-		date: time.Now(),
+	weatherNow := Weather{
+		Date:         time.Now(),
+		TemperatureC: 15,
+		Description:  "Ветрено, возможен дождь",
 	}
-	fmt.Print(w)
+	MarshalUnmarshal(weatherNow)
+	fmt.Println()
+
+	diff := GetDuration()
+	fmt.Printf("Difference in hours: %.2f\n", diff.Hours())
+	fmt.Printf("Difference in minutes: %.2f\n", diff.Minutes())
+	fmt.Printf("Difference in seconds: %.2f\n", diff.Seconds())
+
+	ReadWrite()
 }
 
-type weather struct {
-	date         time.Time `json:"date"`
-	temperatureC int       `json:"temperatureC"`
-	description  string    `json:"description"`
+type Weather struct {
+	Date         time.Time `json:"date"`
+	TemperatureC int       `json:"temperatureC"`
+	Description  string    `json:"description"`
 }
