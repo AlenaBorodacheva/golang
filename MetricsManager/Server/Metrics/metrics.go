@@ -1,59 +1,76 @@
 package metrics
 
 import (
-	"fmt"
 	"log"
+	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 func GetMetrics() *Metrics {
-	getCpu()
-	getRam()
-	return nil
+	metrics := new(Metrics)
+	metrics.Cpu = *getCpu()
+	metrics.Ram = *getRam()
+	return metrics
 }
 
-func getCpu() {
+func getCpu() *CPU {
 	// Get CPU Info
-	info, err := cpu.Info()
+	cpuModel := new(CPU)
+	infos, err := cpu.Info()
 	if err != nil {
 		log.Fatal(err)
+		return nil
 	}
-	for _, ci := range info {
-		fmt.Printf("CPU Info: %+v\n", ci)
-	}
+	info := infos[0]
+	cpuModel.ModelName = info.ModelName
+	cpuModel.Cores = info.Cores
+	cpuModel.Mhz = info.Mhz
 
 	// Get CPU Percentage
+	time.Sleep(time.Second)
 	percentages, err := cpu.Percent(0, true)
 	if err != nil {
 		log.Fatal(err)
+	} else {
+		cpuModel.Percent = percentages
 	}
-	fmt.Printf("CPU Percentages: %+v\n", percentages)
+
+	return cpuModel
 }
 
-func getRam() {
+func getRam() *RAM {
 	// Get Memory Info
+	ramModel := new(RAM)
 	virtualMemory, err := mem.VirtualMemory()
 	if err != nil {
 		log.Fatal(err)
+		return nil
 	}
-	fmt.Printf("Total RAM: %v bytes\n", virtualMemory.Total)
-	fmt.Printf("Free RAM: %v bytes\n", virtualMemory.Free)
-	fmt.Printf("Used RAM: %v bytes\n", virtualMemory.Used)
-	fmt.Printf("Used percent: %f%%\n", virtualMemory.UsedPercent)
+
+	ramModel.Total = virtualMemory.Total
+	ramModel.Free = virtualMemory.Free
+	ramModel.Used = virtualMemory.Used
+	ramModel.UsedPercent = virtualMemory.UsedPercent
+	return ramModel
 }
 
 type Metrics struct {
-	Ram RAM
+	Ram RAM `json:"ram"`
+	Cpu CPU `json:"cpu"`
 }
 
 type CPU struct {
+	ModelName string    `json:"modelName"`
+	Cores     int32     `json:"cores"`
+	Mhz       float64   `json:"mhz"`
+	Percent   []float64 `json:"percentage"`
 }
 
 type RAM struct {
-	Total       uint64
-	Free        uint64
-	Used        uint64
-	UsedPercent float64
+	Total       uint64  `json:"total"`
+	Free        uint64  `json:"free"`
+	Used        uint64  `json:"used"`
+	UsedPercent float64 `json:"usedPercent"`
 }
