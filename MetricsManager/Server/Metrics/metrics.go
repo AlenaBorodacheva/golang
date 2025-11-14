@@ -8,14 +8,7 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 )
 
-func GetMetrics() *Metrics {
-	metrics := new(Metrics)
-	metrics.Cpu = *getCpu()
-	metrics.Ram = *getRam()
-	return metrics
-}
-
-func getCpu() *CPU {
+func GetCpu() *CPU {
 	// Get CPU Info
 	cpuModel := new(CPU)
 	infos, err := cpu.Info()
@@ -37,10 +30,12 @@ func getCpu() *CPU {
 		cpuModel.Percent = percentages
 	}
 
+	cpuModel.Date = time.Now()
+
 	return cpuModel
 }
 
-func getRam() *RAM {
+func GetRam() *RAM {
 	// Get Memory Info
 	ramModel := new(RAM)
 	virtualMemory, err := mem.VirtualMemory()
@@ -53,12 +48,8 @@ func getRam() *RAM {
 	ramModel.Free = virtualMemory.Free
 	ramModel.Used = virtualMemory.Used
 	ramModel.UsedPercent = virtualMemory.UsedPercent
+	ramModel.Date = time.Now()
 	return ramModel
-}
-
-type Metrics struct {
-	Ram RAM `json:"ram"`
-	Cpu CPU `json:"cpu"`
 }
 
 type CPU struct {
@@ -66,11 +57,13 @@ type CPU struct {
 	Cores     int32     `json:"cores"`
 	Mhz       float64   `json:"mhz"`
 	Percent   []float64 `json:"percentage"`
+	Date      time.Time `json:"datetime"`
 }
 
 type RAM struct {
-	Total       uint64  `json:"total"`
-	Free        uint64  `json:"free"`
-	Used        uint64  `json:"used"`
-	UsedPercent float64 `json:"usedPercent"`
+	Total       uint64    `json:"total"`
+	Free        uint64    `json:"free"`
+	Used        uint64    `json:"used"`
+	UsedPercent float64   `json:"usedPercent"`
+	Date        time.Time `json:"datetime"`
 }

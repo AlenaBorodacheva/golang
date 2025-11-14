@@ -2,7 +2,6 @@ package writer
 
 import (
 	"bytes"
-	"encoding/csv"
 	"encoding/json"
 	"log"
 	"os"
@@ -11,32 +10,29 @@ import (
 )
 
 func WriteToCsv(filename string, data []byte) error {
-	// --- Запись в CSV ---
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal("Ошибка создания файла:", err)
-		return err
-	}
-	defer file.Close()
-
+	b := &bytes.Buffer{}
+	wr := json2csv.NewCSVWriter(b)
 	var x []map[string]interface{}
 
 	// unMarshall json
-	err1 := json.Unmarshal(data, &x)
-	if err1 != nil {
-		log.Fatal(err)
-	}
-	csv1, err := json2csv.JSON2CSV(x)
+	err := json.Unmarshal(data, &x)
 	if err != nil {
 		log.Fatal(err)
+		return err
+	}
+
+	// convert json to CSV
+	csv, err := json2csv.JSON2CSV(x)
+	if err != nil {
+		log.Fatal(err)
+		return err
 	}
 
 	// CSV bytes convert & writing...
-	b := &bytes.Buffer{}
-	wr := json2csv.NewCSVWriter(b)
-	err = wr.WriteCSV(csv1)
+	err = wr.WriteCSV(csv)
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 	wr.Flush()
 	got := b.String()
@@ -44,12 +40,20 @@ func WriteToCsv(filename string, data []byte) error {
 	//Following line prints CSV
 	println(got)
 
-	writer := csv.NewWriter(file)
-	defer writer.Flush() // Убедиться, что буфер записан
+	createFileAppendText(filename, got)
 
-	if _, err = file.WriteString(got); err != nil {
+	return nil
+}
+
+func createFileAppendText(filename string, text string) {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
 		panic(err)
 	}
 
-	return nil
+	defer f.Close()
+
+	if _, err = f.WriteString(text); err != nil {
+		panic(err)
+	}
 }
